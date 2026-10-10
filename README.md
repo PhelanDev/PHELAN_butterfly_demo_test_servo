@@ -90,8 +90,8 @@ buomv1/
 
 | Linh Kiện | Chân Tín Hiệu | Chân Nguồn | Chức Năng |
 | :--- | :---: | :---: | :--- |
-| **Servo PTK 7452 Trái (L)** | `GPIO 4` | BEC 5V / GND | Động lực vỗ cánh + lái vi sai cánh trái (PWM 300Hz) |
-| **Servo PTK 7452 Phải (R)** | `GPIO 5` | BEC 5V / GND | Động lực vỗ cánh + lái vi sai cánh phải (PWM 300Hz) |
+| **Servo PTK 7452 Trái (L)** | `GPIO 21` | BEC 5V / GND | Động lực vỗ cánh + lái vi sai cánh trái (PWM 300Hz) |
+| **Servo PTK 7452 Phải (R)** | `GPIO 22` | BEC 5V / GND | Động lực vỗ cánh + lái vi sai cánh phải (PWM 300Hz) |
 | **LED Trạng Thái** | `GPIO 2` | Onboard / GND | Onboard LED · Chớp chậm: Đang kết nối · Chớp nhanh: DISARMED · Sáng: ARMED |
 | **Nguồn Pin 2S (7.4V)** | — | Vào BEC IN (+/-) | Cung cấp toàn bộ công suất hoạt động cho hệ thống |
 

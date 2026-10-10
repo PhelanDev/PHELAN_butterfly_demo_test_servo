@@ -15,16 +15,14 @@ inline void disableBrownout() {
 
 namespace Config {
 #if defined(CONFIG_IDF_TARGET_ESP32C3)
-constexpr uint8_t SERVO_L_PIN = 4;
-constexpr uint8_t SERVO_R_PIN = 5;
+constexpr uint8_t SERVO_L_PIN = 21;
+constexpr uint8_t SERVO_R_PIN = 22;
 constexpr uint8_t LED_PIN = 8;
 #else
 // Standard ESP32 (ESP-WROOM-32 / ESP32 Dev Module)
-// CẢNH BÁO QUAN TRỌNG: GPIO 6-11 nối trực tiếp vào SPI Flash nội bộ, cấm sử
-// dụng!
-constexpr uint8_t SERVO_L_PIN = 4; // GPIO 4
-constexpr uint8_t SERVO_R_PIN = 5; // GPIO 5
-constexpr uint8_t LED_PIN = 2;     // Onboard LED của ESP32 Dev Module (GPIO 2)
+constexpr uint8_t SERVO_L_PIN = 21; // GPIO 21 (Servo Trái)
+constexpr uint8_t SERVO_R_PIN = 22; // GPIO 22 (Servo Phải)
+constexpr uint8_t LED_PIN = 2;      // Onboard LED của ESP32 Dev Module (GPIO 2)
 #endif
 
 // Wi-Fi credentials — change these to match your network.
