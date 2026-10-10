@@ -1,11 +1,11 @@
 #pragma once
 
-#include <Arduino.h>
-#include <atomic>
 #include "esp_wifi.h"
 #include "hal/brownout_ll.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/soc.h"
+#include <Arduino.h>
+#include <atomic>
 
 inline void disableBrownout() {
 #if defined(RTC_CNTL_BROWN_OUT_REG)
@@ -20,16 +20,19 @@ constexpr uint8_t SERVO_R_PIN = 5;
 constexpr uint8_t LED_PIN = 8;
 #else
 // Standard ESP32 (ESP-WROOM-32 / ESP32 Dev Module)
-// CẢNH BÁO QUAN TRỌNG: GPIO 6-11 nối trực tiếp vào SPI Flash nội bộ, cấm sử dụng!
-constexpr uint8_t SERVO_L_PIN = 4;  // GPIO 4
-constexpr uint8_t SERVO_R_PIN = 5;  // GPIO 5
-constexpr uint8_t LED_PIN = 2;      // Onboard LED của ESP32 Dev Module (GPIO 2)
+// CẢNH BÁO QUAN TRỌNG: GPIO 6-11 nối trực tiếp vào SPI Flash nội bộ, cấm sử
+// dụng!
+constexpr uint8_t SERVO_L_PIN = 4; // GPIO 4
+constexpr uint8_t SERVO_R_PIN = 5; // GPIO 5
+constexpr uint8_t LED_PIN = 2;     // Onboard LED của ESP32 Dev Module (GPIO 2)
 #endif
 
 // Wi-Fi credentials — change these to match your network.
 // Leave SSID empty ("") to always run in SoftAP mode.
-constexpr char WIFI_STA_SSID[] = "YourWiFiSSID";
-constexpr char WIFI_STA_PASS[] = "YourWiFiPassword";
+constexpr char WIFI_STA_SSID[] = "Phong12";
+constexpr char WIFI_STA_PASS[] = "abcd1234";
+constexpr char WIFI_AP_SSID[] = "Phelan-Butterfly";
+constexpr char WIFI_AP_PASS[] = ""; // Mật khẩu SoftAP (để trống "" để mở tự do không cần mật khẩu, hoặc điền tối thiểu 8 ký tự)
 constexpr char MDNS_HOST[] = "phelan";
 
 constexpr int SERVO_HZ = 300;
@@ -75,7 +78,7 @@ inline int mapTrim15(int x) {
   int s = (d > 0) ? (d - STICK_DEADBAND) : (d + STICK_DEADBAND);
   return constrain(s / 30, -15, 15);
 }
-}
+} // namespace Config
 
 #pragma pack(push, 1)
 struct FlightPacket {
