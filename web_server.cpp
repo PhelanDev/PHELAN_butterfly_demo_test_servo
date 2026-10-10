@@ -101,96 +101,88 @@ bool isConnected() {
 }
 
 void init() {
-  WiFi.persistent(false);
-  WiFi.disconnect(true);
-  delay(100);
-
   Serial.println();
-  Serial.printf("[BOOT] MAC: %s\n", WiFi.macAddress().c_str());
+  Serial.println("[BOOT] Khoi dong he thong mang Wi-Fi...");
+
+  // Cau hinh dia chi IP co dinh cho SoftAP (Phao cuu sinh luon hoat dong)
+  IPAddress apIP(192, 168, 4, 1);
+  IPAddress netMsk(255, 255, 255, 0);
 
   bool hasStaConfig = (strlen(Config::WIFI_STA_SSID) > 0 &&
                        strcmp(Config::WIFI_STA_SSID, "YourWiFiSSID") != 0);
-  bool staConnected = false;
 
   if (hasStaConfig) {
-    WiFi.mode(WIFI_STA);
-    esp_wifi_set_bandwidth(WIFI_IF_STA, WIFI_BW_HT20);
-    WiFi.setTxPower(WIFI_POWER_19_5dBm);
-    WiFi.setSleep(false);
-    esp_wifi_set_ps(WIFI_PS_NONE);
+    // Che do ket hop AP + STA: Vua ket noi Router nha, vua phat SoftAP du phong
+    WiFi.mode(WIFI_AP_STA);
+  } else {
+    WiFi.mode(WIFI_AP);
+  }
 
-    Serial.printf("[WiFi] Scanning for: %s ...\n", Config::WIFI_STA_SSID);
+  // Khoi dong SoftAP voi dai IP 192.168.4.1
+  WiFi.softAPConfig(apIP, apIP, netMsk);
+  const char *apSsid = (strlen(Config::WIFI_AP_SSID) > 0)
+                           ? Config::WIFI_AP_SSID
+                           : "Phelan-Butterfly";
+  const char *apPass =
+      (strlen(Config::WIFI_AP_PASS) >= 8) ? Config::WIFI_AP_PASS : nullptr;
+  WiFi.softAP(apSsid, apPass);
 
-    int n = WiFi.scanNetworks(false, false, false, 300);
-    int bestChannel = 0;
-    uint8_t bestBSSID[6] = {0};
-    int bestRSSI = -999;
-    bool foundRouter = false;
-    String bestSSID = Config::WIFI_STA_SSID;
+  Serial.printf("[WiFi] SoftAP San sang! SSID: %s | IP: http://%s\n", apSsid,
+                WiFi.softAPIP().toString().c_str());
 
-    for (int i = 0; i < n; i++) {
-      String curSsid = WiFi.SSID(i);
-      if (curSsid == Config::WIFI_STA_SSID) {
-        if (WiFi.RSSI(i) > bestRSSI) {
-          bestRSSI = WiFi.RSSI(i);
-          bestChannel = WiFi.channel(i);
-          bestSSID = curSsid;
-          memcpy(bestBSSID, WiFi.BSSID(i), 6);
-          foundRouter = true;
-        }
-      }
-    }
+  bool staConnected = false;
+  if (hasStaConfig) {
+    Serial.printf("[WiFi] Dang ket noi Router: %s ...\n", Config::WIFI_STA_SSID);
+    WiFi.begin(Config::WIFI_STA_SSID, Config::WIFI_STA_PASS);
 
-    if (foundRouter) {
-      Serial.printf("[ROUTER] Found %s on Ch %d (%d dBm)\n", bestSSID.c_str(),
-                    bestChannel, bestRSSI);
-      WiFi.begin(bestSSID.c_str(), Config::WIFI_STA_PASS, bestChannel, bestBSSID);
-    } else {
-      WiFi.begin(Config::WIFI_STA_SSID, Config::WIFI_STA_PASS);
-    }
-    WiFi.scanDelete();
-    WiFi.setAutoReconnect(true);
-
-    Serial.print("[WiFi] Connecting to STA ");
-    unsigned long startWifi = millis();
-    while (WiFi.status() != WL_CONNECTED && (millis() - startWifi < 6000)) {
-      delay(200);
+    unsigned long startWait = millis();
+    while (WiFi.status() != WL_CONNECTED && (millis() - startWait < 8000)) {
+      delay(250);
       Serial.print(".");
       digitalWrite(Config::LED_PIN, !digitalRead(Config::LED_PIN));
     }
+
     staConnected = (WiFi.status() == WL_CONNECTED);
+    if (staConnected) {
+      Serial.printf("\n[WiFi] Da ket noi Router thanh cong! IP: http://%s | Ch: %d\n",
+                    WiFi.localIP().toString().c_str(), WiFi.channel());
+    } else {
+      Serial.println(
+          "\n[WiFi] Khong the ket noi Router! Dang chay doc lap bang SoftAP.");
+    }
   }
 
-  if (staConnected) {
-    digitalWrite(Config::LED_PIN, LOW);
-    Serial.printf("\n[WiFi] Connected to STA! IP: http://%s | Ch: %d\n",
-                  WiFi.localIP().toString().c_str(), WiFi.channel());
-  } else {
-    // SoftAP Mode: Tự phát Wi-Fi độc lập không cần router
-    WiFi.disconnect(true);
-    delay(50);
-    WiFi.mode(WIFI_AP);
-    WiFi.softAP("Phelan-Butterfly");
-    digitalWrite(Config::LED_PIN, LOW);
-    Serial.printf("\n[WiFi] SoftAP Ready! SSID: Phelan-Butterfly | IP: http://%s\n",
-                  WiFi.softAPIP().toString().c_str());
-  }
-
+  // Khoi dong mDNS
   if (MDNS.begin(Config::MDNS_HOST)) {
     MDNS.addService("http", "tcp", 80);
     Serial.printf("[mDNS] http://%s.local\n", Config::MDNS_HOST);
-  } else {
-    Serial.println("[mDNS] Failed to start");
   }
 
   ws.onEvent(onWsEvent);
   server.addHandler(&ws);
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
-    request->send_P(200, "text/html; charset=utf-8", PAGE_HTML);
-  });
-  server.begin();
 
+  // Phuc vu giao dien web cho ca / va /index.html
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
+    request->send_P(200, "text/html; charset=utf-8", (const uint8_t *)PAGE_HTML,
+                    sizeof(PAGE_HTML) - 1);
+  });
+  server.on("/index.html", HTTP_GET, [](AsyncWebServerRequest *request) {
+    request->send_P(200, "text/html; charset=utf-8", (const uint8_t *)PAGE_HTML,
+                    sizeof(PAGE_HTML) - 1);
+  });
+
+  // Chuyen huong Captive Portal cua dien thoai ve trang chu
+  server.on("/generate_204", HTTP_GET, [](AsyncWebServerRequest *request) {
+    request->redirect("/");
+  });
+  server.on("/hotspot-detect.html", HTTP_GET, [](AsyncWebServerRequest *request) {
+    request->redirect("/");
+  });
+
+  server.begin();
   wifiActive = true;
+  digitalWrite(Config::LED_PIN, LOW);
+  Serial.println("[HTTP] Web Server da khoi dong thanh cong tren cong 80!");
 }
 
 void handleLoop() {

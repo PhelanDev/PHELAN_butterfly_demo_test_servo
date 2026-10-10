@@ -905,7 +905,8 @@ function initWebSocket() {
   if (App.ws && (App.ws.readyState === WebSocket.OPEN || App.ws.readyState === WebSocket.CONNECTING)) {
     return;
   }
-  const wsUrl = `ws://${location.host}/ws`;
+  const host = location.host || "192.168.4.1";
+  const wsUrl = `ws://${host}/ws`;
   try {
     App.ws = new WebSocket(wsUrl);
   } catch (err) {

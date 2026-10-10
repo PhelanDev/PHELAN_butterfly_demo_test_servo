@@ -24,7 +24,8 @@ void setup() {
 
   WebServer::init();
 
-  xTaskCreatePinnedToCore(flightCoreTask, "flightCore", 4096, NULL, 2, NULL, 0);
+  // Chay flightCoreTask tren Core 1 (App Core) de khong tranh chap CPU voi Wi-Fi Core 0
+  xTaskCreatePinnedToCore(flightCoreTask, "flightCore", 4096, NULL, 2, NULL, 1);
 }
 
 void loop() {
