@@ -14,7 +14,6 @@ bool webControlEnabled = false;
 volatile unsigned long lastWsPacketTime = 0;
 unsigned long lastTelemSendTime = 0;
 volatile int8_t wsArmRequest = 0;
-constexpr unsigned long WS_FAILSAFE_MS = 2000;
 constexpr unsigned long TELEM_INTERVAL_MS = 200;
 
 static int16_t webChannels[16] = {1500, 1500, 1000, 1500, 1000, 1500, 1500, 1500,
@@ -97,7 +96,7 @@ void sendTelemetry() {
 bool isConnected() {
   unsigned long now = millis();
   bool linkLost =
-      (lastWsPacketTime > 0 && (now - lastWsPacketTime > WS_FAILSAFE_MS));
+      (lastWsPacketTime == 0 || (now - lastWsPacketTime > Config::WS_FAILSAFE_MS));
   return !linkLost && webControlEnabled;
 }
 
@@ -105,76 +104,77 @@ void init() {
   WiFi.persistent(false);
   WiFi.disconnect(true);
   delay(100);
-  WiFi.mode(WIFI_STA);
 
   Serial.println();
-  Serial.printf("[BOOT] MAC: %s | SSID: %s\n", WiFi.macAddress().c_str(),
-                Config::WIFI_STA_SSID);
+  Serial.printf("[BOOT] MAC: %s\n", WiFi.macAddress().c_str());
 
-  esp_wifi_set_bandwidth(WIFI_IF_STA, WIFI_BW_HT20);
-  WiFi.setTxPower(WIFI_POWER_19_5dBm);
-  WiFi.setSleep(false);
-  esp_wifi_set_ps(WIFI_PS_NONE);
+  bool hasStaConfig = (strlen(Config::WIFI_STA_SSID) > 0 &&
+                       strcmp(Config::WIFI_STA_SSID, "YourWiFiSSID") != 0);
+  bool staConnected = false;
 
-  Serial.printf("[RF SCAN] Scanning for: %s ...\n", Config::WIFI_STA_SSID);
+  if (hasStaConfig) {
+    WiFi.mode(WIFI_STA);
+    esp_wifi_set_bandwidth(WIFI_IF_STA, WIFI_BW_HT20);
+    WiFi.setTxPower(WIFI_POWER_19_5dBm);
+    WiFi.setSleep(false);
+    esp_wifi_set_ps(WIFI_PS_NONE);
 
-  int n = WiFi.scanNetworks(false, false, false, 300);
-  int bestChannel = 0;
-  uint8_t bestBSSID[6] = {0};
-  int bestRSSI = -999;
-  bool foundRouter = false;
-  String bestSSID = Config::WIFI_STA_SSID;
-  int countCh[14] = {0};
+    Serial.printf("[WiFi] Scanning for: %s ...\n", Config::WIFI_STA_SSID);
 
-  for (int i = 0; i < n; i++) {
-    int ch = WiFi.channel(i);
-    if (ch >= 1 && ch <= 13)
-      countCh[ch]++;
-    String curSsid = WiFi.SSID(i);
-    if (curSsid == Config::WIFI_STA_SSID || curSsid == "Phong12-5G" ||
-        curSsid == "Phong12") {
-      if (WiFi.RSSI(i) > bestRSSI) {
-        bestRSSI = WiFi.RSSI(i);
-        bestChannel = ch;
-        bestSSID = curSsid;
-        memcpy(bestBSSID, WiFi.BSSID(i), 6);
-        foundRouter = true;
+    int n = WiFi.scanNetworks(false, false, false, 300);
+    int bestChannel = 0;
+    uint8_t bestBSSID[6] = {0};
+    int bestRSSI = -999;
+    bool foundRouter = false;
+    String bestSSID = Config::WIFI_STA_SSID;
+
+    for (int i = 0; i < n; i++) {
+      String curSsid = WiFi.SSID(i);
+      if (curSsid == Config::WIFI_STA_SSID) {
+        if (WiFi.RSSI(i) > bestRSSI) {
+          bestRSSI = WiFi.RSSI(i);
+          bestChannel = WiFi.channel(i);
+          bestSSID = curSsid;
+          memcpy(bestBSSID, WiFi.BSSID(i), 6);
+          foundRouter = true;
+        }
       }
     }
-  }
 
-  Serial.printf("[RF AUDIT] Ch 1: %d | Ch 6: %d | Ch 11: %d\n", countCh[1],
-                countCh[6], countCh[11]);
-
-  if (foundRouter) {
-    Serial.printf("[ROUTER] Found %s on Ch %d (%d dBm)\n", bestSSID.c_str(),
-                  bestChannel, bestRSSI);
-    WiFi.begin(bestSSID.c_str(), Config::WIFI_STA_PASS, bestChannel, bestBSSID);
-  } else {
-    WiFi.begin(Config::WIFI_STA_SSID, Config::WIFI_STA_PASS);
-  }
-  WiFi.scanDelete();
-
-  WiFi.setAutoReconnect(true);
-
-  Serial.print("[WiFi] Connecting ");
-  unsigned long startWifi = millis();
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(250);
-    Serial.print(".");
-    digitalWrite(Config::LED_PIN, !digitalRead(Config::LED_PIN));
-    if (millis() - startWifi > 10000) {
-      Serial.printf("\n[WiFi] Retry %s (MAC: %s)...\n[WiFi] Connecting ",
-                    Config::WIFI_STA_SSID, WiFi.macAddress().c_str());
-      startWifi = millis();
+    if (foundRouter) {
+      Serial.printf("[ROUTER] Found %s on Ch %d (%d dBm)\n", bestSSID.c_str(),
+                    bestChannel, bestRSSI);
+      WiFi.begin(bestSSID.c_str(), Config::WIFI_STA_PASS, bestChannel, bestBSSID);
+    } else {
       WiFi.begin(Config::WIFI_STA_SSID, Config::WIFI_STA_PASS);
     }
+    WiFi.scanDelete();
+    WiFi.setAutoReconnect(true);
+
+    Serial.print("[WiFi] Connecting to STA ");
+    unsigned long startWifi = millis();
+    while (WiFi.status() != WL_CONNECTED && (millis() - startWifi < 6000)) {
+      delay(200);
+      Serial.print(".");
+      digitalWrite(Config::LED_PIN, !digitalRead(Config::LED_PIN));
+    }
+    staConnected = (WiFi.status() == WL_CONNECTED);
   }
 
-  digitalWrite(Config::LED_PIN, LOW);
-  Serial.printf("\n[WiFi] Connected! IP: http://%s | MAC: %s | Ch: %d\n",
-                WiFi.localIP().toString().c_str(), WiFi.macAddress().c_str(),
-                WiFi.channel());
+  if (staConnected) {
+    digitalWrite(Config::LED_PIN, LOW);
+    Serial.printf("\n[WiFi] Connected to STA! IP: http://%s | Ch: %d\n",
+                  WiFi.localIP().toString().c_str(), WiFi.channel());
+  } else {
+    // SoftAP Mode: Tự phát Wi-Fi độc lập không cần router
+    WiFi.disconnect(true);
+    delay(50);
+    WiFi.mode(WIFI_AP);
+    WiFi.softAP("Phelan-Butterfly");
+    digitalWrite(Config::LED_PIN, LOW);
+    Serial.printf("\n[WiFi] SoftAP Ready! SSID: Phelan-Butterfly | IP: http://%s\n",
+                  WiFi.softAPIP().toString().c_str());
+  }
 
   if (MDNS.begin(Config::MDNS_HOST)) {
     MDNS.addService("http", "tcp", 80);
@@ -186,7 +186,7 @@ void init() {
   ws.onEvent(onWsEvent);
   server.addHandler(&ws);
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
-    request->send_P(200, "text/html", PAGE_HTML);
+    request->send_P(200, "text/html; charset=utf-8", PAGE_HTML);
   });
   server.begin();
 
@@ -197,10 +197,9 @@ void handleLoop() {
   unsigned long now = millis();
 
   bool linkLost =
-      (lastWsPacketTime > 0 && (now - lastWsPacketTime > WS_FAILSAFE_MS));
+      (lastWsPacketTime == 0 || (now - lastWsPacketTime > Config::WS_FAILSAFE_MS));
   if (linkLost && webControlEnabled) {
     webControlEnabled = false;
-    wsArmRequest = 0;
   }
 
   bool snapshotConnected = !linkLost && webControlEnabled;

@@ -82,11 +82,26 @@ buomv1/
 
 ## Sơ Đồ Kết Nối (Pinout & Wiring)
 
+> [!CAUTION]
+> **CẢNH BÁO QUAN TRỌNG VỀ PINOUT (ESP32 WROOM / ESP32 Dev Module):**
+> Tuyệt đối **KHÔNG sử dụng GPIO 6 đến GPIO 11** trên kit ESP32 tiêu chuẩn. Các chân này được nối trực tiếp với chip nhớ SPI Flash nội bộ. Nếu gán GPIO 6 hoặc 8 làm chân servo/LED, ESP32 sẽ bị xung đột bus bộ nhớ Flash và rơi vào vòng lặp Bootloop/Watchdog Reset: `rst:0x8 (TG1WDT_SYS_RESET)`.
+
+### 1. Kit Chuẩn ESP32 Dev Module (ESP-WROOM-32)
+
 | Linh Kiện | Chân Tín Hiệu | Chân Nguồn | Chức Năng |
 | :--- | :---: | :---: | :--- |
-| **Servo PTK 7452 Trái (L)** | `GPIO 5` | BEC 5V / GND | Động lực vỗ cánh + lái vi sai cánh trái (PWM 300Hz) |
-| **Servo PTK 7452 Phải (R)** | `GPIO 6` | BEC 5V / GND | Động lực vỗ cánh + lái vi sai cánh phải (PWM 300Hz) |
-| **LED Trạng Thái** | `GPIO 8` | Onboard / GND | Chớp chậm: Đang kết nối · Chớp nhanh: DISARMED · Sáng: ARMED |
+| **Servo PTK 7452 Trái (L)** | `GPIO 4` | BEC 5V / GND | Động lực vỗ cánh + lái vi sai cánh trái (PWM 300Hz) |
+| **Servo PTK 7452 Phải (R)** | `GPIO 5` | BEC 5V / GND | Động lực vỗ cánh + lái vi sai cánh phải (PWM 300Hz) |
+| **LED Trạng Thái** | `GPIO 2` | Onboard / GND | Onboard LED · Chớp chậm: Đang kết nối · Chớp nhanh: DISARMED · Sáng: ARMED |
+| **Nguồn Pin 2S (7.4V)** | — | Vào BEC IN (+/-) | Cung cấp toàn bộ công suất hoạt động cho hệ thống |
+
+### 2. Kit Nhỏ Gọn ESP32-C3 Dev Module
+
+| Linh Kiện | Chân Tín Hiệu | Chân Nguồn | Chức Năng |
+| :--- | :---: | :---: | :--- |
+| **Servo PTK 7452 Trái (L)** | `GPIO 4` | BEC 5V / GND | Động lực vỗ cánh + lái vi sai cánh trái (PWM 300Hz) |
+| **Servo PTK 7452 Phải (R)** | `GPIO 5` | BEC 5V / GND | Động lực vỗ cánh + lái vi sai cánh phải (PWM 300Hz) |
+| **LED Trạng Thái** | `GPIO 8` | Onboard / GND | LED trạng thái (RGB/IO8 trên kit ESP32-C3) |
 | **Nguồn Pin 2S (7.4V)** | — | Vào BEC IN (+/-) | Cung cấp toàn bộ công suất hoạt động cho hệ thống |
 
 ---
@@ -138,7 +153,7 @@ Board package yêu cầu: **ESP32 by Espressif** (>= 2.0.0) trong Boards Manager
 
 ## Tùy Chỉnh Thông Số
 
-Mở [buomv1.ino](file:///d:/buomv1/buomv1.ino), hiệu chỉnh tại namespace `Config`:
+Mở [config.h](file:///d:/buomv1/config.h), hiệu chỉnh tại namespace `Config`:
 
 | Tham số | Giá trị chuẩn PTK 7452 | Đơn vị | Ý nghĩa kỹ thuật |
 | :--- | :---: | :---: | :--- |
@@ -149,6 +164,7 @@ Mở [buomv1.ino](file:///d:/buomv1/buomv1.ino), hiệu chỉnh tại namespace 
 | `FLAP_AMP` | `65` | deg | Biên độ góc quét vỗ cánh cực đại khi kéo ga tối đa |
 | `FLAP_SPEED_MIN` | `157286` | — | Bước tăng chu kỳ vỗ cánh ở mức ga thấp nhất |
 | `FLAP_SPEED_MAX` | `262144` | — | Bước tăng chu kỳ vỗ cánh ở mức ga cao nhất |
+| `WS_FAILSAFE_MS` | `500` | ms | Thời gian timeout mất kết nối Wi-Fi/Web trước khi kích hoạt Failsafe |
 | `FAILSAFE_DIHEDRAL` | `15` | deg | Góc nâng cánh chữ V tự lượn khi mất tín hiệu điều khiển |
 | `REVERSE_SERVO_L` | `false` | bool | Đảo chiều servo trái nếu lắp ngược càng truyền động |
 | `REVERSE_SERVO_R` | `false` | bool | Đảo chiều servo phải nếu lắp ngược càng truyền động |

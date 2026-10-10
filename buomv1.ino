@@ -4,7 +4,7 @@
 #include "web_server.h"
 
 void setup() {
-  WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
+  disableBrownout();
   Serial.begin(115200);
 
   unsigned long startWait = millis();
@@ -24,7 +24,7 @@ void setup() {
 
   WebServer::init();
 
-  xTaskCreatePinnedToCore(flightCoreTask, "flightCore", 4096, NULL, 5, NULL, 0);
+  xTaskCreatePinnedToCore(flightCoreTask, "flightCore", 4096, NULL, 2, NULL, 0);
 }
 
 void loop() {

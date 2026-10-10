@@ -7,15 +7,24 @@
 #include "soc/rtc_cntl_reg.h"
 #include "soc/soc.h"
 
-__attribute__((constructor)) static void disable_bod_early() {
-  brownout_ll_bod_enable(false);
-  brownout_ll_intr_enable(false);
+inline void disableBrownout() {
+#if defined(RTC_CNTL_BROWN_OUT_REG)
+  WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
+#endif
 }
 
 namespace Config {
-constexpr uint8_t SERVO_L_PIN = 5;
-constexpr uint8_t SERVO_R_PIN = 6;
+#if defined(CONFIG_IDF_TARGET_ESP32C3)
+constexpr uint8_t SERVO_L_PIN = 4;
+constexpr uint8_t SERVO_R_PIN = 5;
 constexpr uint8_t LED_PIN = 8;
+#else
+// Standard ESP32 (ESP-WROOM-32 / ESP32 Dev Module)
+// CẢNH BÁO QUAN TRỌNG: GPIO 6-11 nối trực tiếp vào SPI Flash nội bộ, cấm sử dụng!
+constexpr uint8_t SERVO_L_PIN = 4;  // GPIO 4
+constexpr uint8_t SERVO_R_PIN = 5;  // GPIO 5
+constexpr uint8_t LED_PIN = 2;      // Onboard LED của ESP32 Dev Module (GPIO 2)
+#endif
 
 // Wi-Fi credentials — change these to match your network.
 // Leave SSID empty ("") to always run in SoftAP mode.
@@ -44,6 +53,7 @@ constexpr int GLIDE_SERVO_SPEED_DPS = 1570;
 constexpr int16_t PERCH_ENTER_ELEV = 1300;
 constexpr int16_t PERCH_EXIT_ELEV = 1700;
 constexpr int16_t STICK_DEADBAND = 10;
+constexpr unsigned long WS_FAILSAFE_MS = 500;
 constexpr unsigned long RX_HARD_FAILSAFE_MS = 3000;
 
 constexpr int16_t CH_CENTER = 1500;

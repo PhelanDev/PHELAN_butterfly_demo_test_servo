@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <Arduino.h>
 
 const char PAGE_HTML[] PROGMEM = R"rawhtml(
@@ -29,8 +29,8 @@ const char PAGE_HTML[] PROGMEM = R"rawhtml(
   --accent-amber-glow: rgba(245, 158, 11, 0.4);
   --accent-cyan: #06b6d4;
 
-  --font-mono: ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo, Consolas, monospace;
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", "Segoe UI Mono", Menlo, Monaco, Consolas, monospace;
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 * {
@@ -54,6 +54,8 @@ html, body {
   background-size: 100% 100%, 32px 32px, 32px 32px;
   color: var(--text-white);
   font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   overflow: hidden;
   position: fixed;
   inset: 0;
@@ -83,11 +85,11 @@ html, body {
   35%, 65% { transform: rotate(-90deg); }
 }
 .rot-msg {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: 14px;
   font-weight: 700;
   color: var(--text-white);
-  letter-spacing: 2px;
+  letter-spacing: 1px;
 }
 @media (orientation: portrait) {
   #portrait-guard { display: flex !important; }
@@ -101,17 +103,17 @@ html, body {
   background: rgba(239, 68, 68, 0.95);
   border: 1px solid #f87171;
   color: #fff;
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-weight: 700;
   font-size: 12px;
-  padding: 6px 14px;
+  padding: 6px 16px;
   border-radius: 6px;
   box-shadow: 0 4px 16px rgba(239, 68, 68, 0.5);
   pointer-events: none;
   opacity: 0;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   z-index: 500;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
 }
 #interlock-toast.show {
   opacity: 1;
@@ -124,14 +126,14 @@ html, body {
   top: 44px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(220, 38, 38, 0.95);
+  background: rgba(220, 38, 38, 0.96);
   border: 1px solid #fca5a5;
   color: #fff;
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: 11px;
   font-weight: 800;
-  letter-spacing: 1.5px;
-  padding: 4px 16px;
+  letter-spacing: 0.5px;
+  padding: 5px 18px;
   border-radius: 20px;
   box-shadow: 0 0 16px rgba(239, 68, 68, 0.7);
   z-index: 600;
@@ -170,7 +172,18 @@ html, body {
   border-radius: 4px;
 }
 .badge-linked { color: var(--accent-green); background: rgba(16, 185, 129, 0.15); }
+.badge-armed { color: #fff; background: rgba(37, 99, 235, 0.85); box-shadow: 0 0 8px rgba(37, 99, 235, 0.4); }
 .badge-disc { color: var(--accent-red); background: rgba(239, 68, 68, 0.15); }
+.badge-failsafe {
+  color: #fff;
+  background: rgba(239, 68, 68, 0.95);
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.7);
+  animation: pulse-fs 1s infinite alternate;
+}
+@keyframes pulse-fs {
+  0% { opacity: 0.85; transform: scale(1); }
+  100% { opacity: 1; transform: scale(1.04); }
+}
 
 .brand-center-group {
   position: absolute;
@@ -494,11 +507,11 @@ html, body {
     <rect x="5" y="2" width="14" height="20" rx="3"></rect>
     <line x1="12" y1="18" x2="12.01" y2="18"></line>
   </svg>
-  <div class="rot-msg">XOAY NGANG Äá»‚ ÄIá»€U KHIá»‚N</div>
+  <div class="rot-msg">XOAY NGANG ĐỂ ĐIỀU KHIỂN</div>
 </div>
 
-<div id="interlock-toast">Cáº¢NH BĂO: Háº  TAY GA Vá»€ 0% Äá»‚ ARM!</div>
-<div id="failsafe-banner">FAILSAFE ACTIVATED - ÄĂƒ Cáº®T Táº¢I SERVO</div>
+<div id="interlock-toast">CẢNH BÁO: HẠ TAY GA VỀ 0% ĐỂ ARM!</div>
+<div id="failsafe-banner">⚠️ FAILSAFE ACTIVATED — ĐÃ CẮT GA &amp; TỰ LƯỢN AN TOÀN</div>
 
 <header class="header-bar">
   <div class="target-badge">
@@ -515,7 +528,7 @@ html, body {
   </div>
 
   <div class="header-right">
-    <button class="btn-fs" onclick="toggleFullScreen()" title="ToĂ n mĂ n hĂ¬nh">FULLSCREEN</button>
+    <button class="btn-fs" onclick="toggleFullScreen()" title="Toàn màn hình">FULLSCREEN</button>
   </div>
 </header>
 
@@ -545,19 +558,19 @@ html, body {
   <section class="center-col">
     <div class="hud-telemetry-grid">
       <div class="hud-tile">
-        <div class="hud-tile-title">â± UPTIME</div>
+        <div class="hud-tile-title">⏱ UPTIME</div>
         <div class="hud-tile-val" id="time-uptime">00:00</div>
       </div>
       <div class="hud-tile">
-        <div class="hud-tile-title">đŸ“¶ PING RTT</div>
+        <div class="hud-tile-title">📶 PING RTT</div>
         <div class="hud-tile-val ping-good" id="val-ping">-- ms</div>
       </div>
       <div class="hud-tile">
-        <div class="hud-tile-title">â¡ ARM TIME</div>
+        <div class="hud-tile-title">⚡ ARM TIME</div>
         <div class="hud-tile-val" id="time-armed">00:00</div>
       </div>
       <div class="hud-tile">
-        <div class="hud-tile-title">đŸª½ FLIGHT TIME</div>
+        <div class="hud-tile-title">🪽 FLIGHT TIME</div>
         <div class="hud-tile-val" id="time-flight">00:00</div>
       </div>
     </div>
@@ -802,9 +815,14 @@ function updatePerchButtonUI(isPerching) {
 }
 
 function handleArmClick() {
+  if (!App.wsConnected) {
+    showInterlockToast("CHƯA KẾT NỐI VỚI BƯỚM — KHÔNG THỂ ARM!");
+    if (navigator.vibrate) navigator.vibrate([120, 60, 120]);
+    return;
+  }
   if (!App.isArmed) {
     if (App.thr > 0) {
-      showInterlockToast("Cáº¢NH BĂO: Háº  TAY GA Vá»€ 0% Äá»‚ ARM!");
+      showInterlockToast("CẢNH BÁO: HẠ TAY GA VỀ 0% ĐỂ ARM!");
       if (navigator.vibrate) navigator.vibrate([120, 60, 120]);
       return;
     }
@@ -832,6 +850,8 @@ function handleStopClick() {
   updatePerchButtonUI(false);
   resetJoysticksToIdle();
   sendFlightPacket(true);
+  const banner = document.getElementById('failsafe-banner');
+  if (banner) banner.style.display = 'none';
 }
 
 function togglePerchClick() {
@@ -875,30 +895,72 @@ setInterval(() => {
   }
 }, 500);
 
+let wsReconnectTimer = null;
+
+function scheduleReconnect() {
+  if (wsReconnectTimer) return;
+  wsReconnectTimer = setTimeout(() => {
+    wsReconnectTimer = null;
+    initWebSocket();
+  }, 1000);
+}
+
 function initWebSocket() {
+  if (App.ws && (App.ws.readyState === WebSocket.OPEN || App.ws.readyState === WebSocket.CONNECTING)) {
+    return;
+  }
   const wsUrl = `ws://${location.host}/ws`;
-  App.ws = new WebSocket(wsUrl);
+  try {
+    App.ws = new WebSocket(wsUrl);
+  } catch (err) {
+    scheduleReconnect();
+    return;
+  }
   App.ws.binaryType = 'arraybuffer';
 
   App.ws.onopen = () => {
+    if (wsReconnectTimer) {
+      clearTimeout(wsReconnectTimer);
+      wsReconnectTimer = null;
+    }
     App.wsConnected = true;
     App.lastHeartbeatTime = performance.now();
     const badge = document.getElementById('hdr-link-state');
-    badge.textContent = "LINKED";
-    badge.className = "badge-state badge-linked";
+    if (badge) {
+      badge.textContent = App.isArmed ? "ARMED" : "LINKED";
+      badge.className = App.isArmed ? "badge-state badge-armed" : "badge-state badge-linked";
+    }
+    const banner = document.getElementById('failsafe-banner');
+    if (banner && !App.isFailsafe) {
+      banner.style.display = 'none';
+    }
+    sendFlightPacket();
   };
 
   App.ws.onclose = () => {
     App.wsConnected = false;
     const badge = document.getElementById('hdr-link-state');
-    badge.textContent = "DISCONNECTED";
-    badge.className = "badge-state badge-disc";
+    if (badge) {
+      badge.textContent = "DISCONNECTED";
+      badge.className = "badge-state badge-disc";
+    }
     const pingEl = document.getElementById('val-ping');
     if (pingEl) {
       pingEl.textContent = "-- ms";
       pingEl.className = "hud-tile-val ping-bad";
     }
-    setTimeout(initWebSocket, 2000);
+    const banner = document.getElementById('failsafe-banner');
+    if (banner && App.isArmed) {
+      banner.style.display = 'block';
+      banner.textContent = "MẤT KẾT NỐI — FAILSAFE ĐANG TỰ LƯỢN";
+    }
+    scheduleReconnect();
+  };
+
+  App.ws.onerror = () => {
+    try {
+      if (App.ws) App.ws.close();
+    } catch (e) {}
   };
 
   App.ws.onmessage = (event) => {
@@ -917,10 +979,44 @@ function initWebSocket() {
       if (view.getUint8(0) === 0xBB) {
         const flags = view.getUint8(1);
         const armedFromHw = (flags & 0x01) !== 0;
+        const modeId = (flags >> 1); // 0: INIT, 1: CONNECTED, 2: PERCHING, 3: FAILSAFE
+
         if (armedFromHw !== App.isArmed) {
           App.isArmed = armedFromHw;
           updateArmButtonUI(App.isArmed);
+          if (!App.isArmed) {
+            showInterlockToast("ĐÃ DISARM — HẠ CẦN GA VỀ 0% ĐỂ ARM LẠI!");
+          }
         }
+
+        const fsBanner = document.getElementById('failsafe-banner');
+        const badge = document.getElementById('hdr-link-state');
+        if (modeId === 3) {
+          App.isFailsafe = true;
+          if (fsBanner) {
+            fsBanner.style.display = 'block';
+            fsBanner.textContent = "FAILSAFE KÍCH HOẠT — ĐÃ CẮT GA & TỰ LƯỢN AN TOÀN";
+          }
+          if (badge) {
+            badge.textContent = "FAILSAFE";
+            badge.className = "badge-state badge-failsafe";
+          }
+        } else {
+          App.isFailsafe = false;
+          if (fsBanner) {
+            fsBanner.style.display = 'none';
+          }
+          if (badge && App.wsConnected) {
+            if (App.isArmed) {
+              badge.textContent = "ARMED";
+              badge.className = "badge-state badge-armed";
+            } else {
+              badge.textContent = "LINKED";
+              badge.className = "badge-state badge-linked";
+            }
+          }
+        }
+
         const uptime = view.getUint16(7, true);
         document.getElementById('time-uptime').textContent = formatTime(uptime);
       }
@@ -930,9 +1026,10 @@ function initWebSocket() {
 
 function triggerFailsafeAlert() {
   const banner = document.getElementById('failsafe-banner');
+  if (!banner) return;
   banner.style.display = 'block';
   setTimeout(() => {
-    banner.style.display = 'none';
+    if (!App.isFailsafe) banner.style.display = 'none';
   }, 3000);
 }
 
@@ -965,12 +1062,32 @@ setInterval(() => {
 }, 25);
 
 setInterval(() => {
-  if (App.wsConnected) {
+  if (App.wsConnected && App.ws) {
     App.lastPingTime = performance.now();
-    App.ws.send("PING");
-    if (performance.now() - App.lastHeartbeatTime > 2500 && App.isArmed) {
-      triggerFailsafeAlert();
+    try {
+      App.ws.send("PING");
+    } catch (e) {}
+    const gap = performance.now() - App.lastHeartbeatTime;
+    if (gap > 2500) {
+      try {
+        App.ws.close();
+      } catch (e) {}
+      App.wsConnected = false;
+      scheduleReconnect();
+    } else if (gap > 1200 && App.isArmed) {
+      const banner = document.getElementById('failsafe-banner');
+      if (banner) {
+        banner.style.display = 'block';
+        banner.textContent = "MẤT TÍN HIỆU TẠM THỜI — ĐANG KẾT NỐI LẠI...";
+      }
+      const badge = document.getElementById('hdr-link-state');
+      if (badge) {
+        badge.textContent = "LINK LOST";
+        badge.className = "badge-state badge-failsafe";
+      }
     }
+  } else if (!App.ws || App.ws.readyState === WebSocket.CLOSED) {
+    scheduleReconnect();
   }
 }, 500);
 
@@ -980,5 +1097,4 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 </body>
-</html>
-)rawhtml";
+</html>)rawhtml";

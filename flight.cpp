@@ -141,6 +141,7 @@ void updateCurrentOffsetGlide(unsigned long dt_us) {
 
 void processFailsafe(unsigned long dt_us) {
   state.isPerching = false;
+  state.isFlapping = false;
   unsigned long lostMs = millis() - state.failsafeEnterMs;
   if (lostMs > Config::RX_HARD_FAILSAFE_MS) {
     state.isArmed = false;
@@ -188,13 +189,6 @@ static void handleFailsafeMode(unsigned long dt_us, bool connected,
 
 static void handleInitMode(unsigned long dt_us, bool connected,
                            unsigned long currentMillis) {
-  if (!connected) {
-    Flight::state.mode = FlightMode::FAILSAFE;
-    Flight::state.failsafeEnterMs = currentMillis;
-    if (Flight::state.failsafeEnterMs == 0)
-      Flight::state.failsafeEnterMs = 1;
-    return;
-  }
   Flight::state.failsafeEnterMs = 0;
   Flight::updateCurrentOffsetGlide(dt_us);
   if (ServoSystem::state.isAttached) {
@@ -275,6 +269,7 @@ static void handleConnectedMode(unsigned long dt_us, bool connected,
     Flight::state.failsafeEnterMs = currentMillis;
     if (Flight::state.failsafeEnterMs == 0)
       Flight::state.failsafeEnterMs = 1;
+    Flight::processFailsafe(dt_us);
     return;
   }
   Flight::state.failsafeEnterMs = 0;
@@ -322,7 +317,8 @@ ControlSnapshot readControlSnapshot() {
 
 void flightCoreTask(void *pvParameters) {
   TickType_t xLastWakeTime = xTaskGetTickCount();
-  const TickType_t xFrequency = pdMS_TO_TICKS(3);
+  const TickType_t xFrequency =
+      (pdMS_TO_TICKS(3) > 0) ? pdMS_TO_TICKS(3) : (TickType_t)1;
   unsigned long lastUs = micros();
 
   for (;;) {
@@ -372,7 +368,7 @@ void flightCoreTask(void *pvParameters) {
           ServoSystem::state.lastPosR = ServoSystem::Control::centerAngle;
           ServoSystem::attachAll();
         }
-      } else if (!reqArm && Flight::state.isArmed) {
+      } else if (!reqArm && Flight::state.isArmed && snapshotConnected) {
         if (throttleIdle) {
           Flight::state.isArmed = false;
           ServoSystem::detachAll();

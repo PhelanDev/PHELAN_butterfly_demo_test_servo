@@ -73,25 +73,39 @@ server.on('upgrade', (req, socket, head) => {
   socket.write(responseHeaders.join('\r\n') + '\r\n\r\n');
   console.log('[SIMULATOR] GCS Client connected to /ws');
 
+  let lastPacketTime = Date.now();
+
   let telemInterval = setInterval(() => {
     if (socket.destroyed) {
       clearInterval(telemInterval);
       return;
     }
+    const now = Date.now();
+    const linkLost = isArmed && (now - lastPacketTime > 600);
+    let modeId = 0;
+    if (linkLost) {
+      modeId = 3; // FAILSAFE
+    } else if (isPerching) {
+      modeId = 2; // PERCHING
+    } else if (isArmed) {
+      modeId = 1; // CONNECTED
+    } else {
+      modeId = 0; // INIT
+    }
+
     const tpkt = Buffer.alloc(12);
     tpkt[0] = 0xBB;
-    const mode = isPerching ? 2 : (isArmed ? 1 : 0);
-    tpkt[1] = (isArmed ? 1 : 0) | (mode << 1);
-    tpkt[2] = 0; // offset
+    tpkt[1] = (isArmed && !linkLost ? 1 : 0) | (modeId << 1);
+    tpkt[2] = linkLost ? 15 : 0; // offset (15 deg glide in failsafe)
     tpkt[3] = 90; // servoL
     tpkt[4] = 90; // servoR
-    tpkt[5] = 42 * 2; // temp
+    tpkt[5] = 42; // temp
     tpkt[6] = 160; // mhz
     const upSec = Math.floor((Date.now() - startTime) / 1000);
     tpkt.writeUInt16LE(upSec, 7);
 
     socket.write(createWebSocketFrame(tpkt, true));
-  }, 300);
+  }, 200);
 
   let buffer = Buffer.alloc(0);
 
@@ -143,6 +157,7 @@ server.on('upgrade', (req, socket, head) => {
       } else if (opcode === 0x02) {
         // Binary frame
         if (payload.length >= 6 && payload[0] === 0xAA) {
+          lastPacketTime = Date.now();
           const flags = payload[1];
           isArmed = (flags & 0x01) !== 0;
           const isStop = (flags & 0x02) !== 0;
