@@ -200,16 +200,32 @@ Simulator mô phỏng đầy đủ giao thức nhị phân WebSocket, truyền n
 
 ## Bản Đầy Đủ (Sắp Ra Mắt)
 
-> [!IMPORTANT]
-> **Phiên bản hoàn chỉnh & đầy đủ tính năng sẽ sớm ra mắt!**
+> [!TIP]
+> 🦋 **Một sinh vật cơ khí biết bay thực thụ sắp sửa cất cánh!**
 >
-> Bản hiện tại là **bản test code** phục vụ việc thử nghiệm mô hình cánh vỗ Butterfly, tinh chỉnh hành trình servo và kiểm tra khả năng điều khiển qua giao diện Web Deck. Phiên bản đầy đủ sắp tới sẽ được công bố với các nội dung chi tiết:
-> - Hướng dẫn gia công cơ khí & lắp ráp chi tiết theo bản vẽ khung sải cánh 80cm hoàn chỉnh.
-> - Thuật toán ổn định khí động học và hỗ trợ tự động giữ độ cao/hướng bay.
-> - Hỗ trợ tay cầm điều khiển vật lý (GamePad Bluetooth, tay điều khiển RC chuyên dụng).
-> - Giao diện Web GCS nâng cao tích hợp đồ thị phân tích trạng thái thời gian thực.
->
-> 🚀 *Theo dõi kho lưu trữ (Star & Watch repo) để nhận thông báo sớm nhất ngay khi bản đầy đủ chính thức được phát hành!*
+> Bản hiện tại là **bản test code nền tảng** để bạn làm quen với hệ thống điều khiển servo tốc độ cao và buồng lái Web Deck. Chúng tôi đang dồn toàn lực hoàn thiện **phiên bản chính thức hoàn chỉnh (Full Release)** — một dự án mã nguồn mở toàn diện giúp bất kỳ ai đam mê chế tạo cũng có thể tự tay tạo nên một chú bướm khổng lồ sải cánh 80cm bay lượn sống động như thật trên bầu trời!
+
+### 🌟 Có gì đáng chờ đợi trong Phiên Bản Chính Thức?
+
+| Tính Năng Đột Phá | Trải Nghiệm Bạn Sẽ Nhận Được |
+| :--- | :--- |
+| 📐 **Trọn Bộ Bản Vẽ Cơ Khí 1:1** | Tải miễn phí bản vẽ Vector Laser (DXF/PDF khổ lớn), tệp in 3D (STL) tối ưu hóa cho thanh carbon và màng cánh siêu nhẹ, kèm hướng dẫn chế tạo từng bước từ A–Z |
+| 🧠 **Hệ Điều Hành Bay Thông Minh** | Tích hợp thuật toán cân bằng khí động học tự động với IMU 6 trục, tự động giữ độ cao (Altitude Hold) và cơ chế lượn đón gió tự nhiên |
+| 🎮 **Đa Nền Tảng Điều Khiển** | Tương thích tức thì với tay cầm Bluetooth (PlayStation, Xbox), tay điều khiển RC chuyên nghiệp (ExpressLRS, EdgeTX, OpenTX) hoặc buồng lái Web Deck FPV trên điện thoại |
+| 🪽 **Vũ Điệu Đậu Cánh Đỉnh Cao** | Cơ chế hạ cánh và gập cánh đậu mô phỏng 100% loài bướm trong tự nhiên, tự động chuyển đổi mượt mà giữa bay lượn, liệng gió và đậu cành |
+| ✨ **Hiệu Ứng Ánh Sáng Đêm** | Tích hợp hệ thống LED dải động lực học tùy biến theo nhịp đập cánh, biến chú bướm thành sinh vật phát sáng kỳ ảo giữa trời đêm |
+
+---
+
+### 🔥 Đừng bỏ lỡ ngày cất cánh!
+
+Dự án đang được phát triển và hoàn thiện với tốc độ cao. Hãy đồng hành cùng chúng tôi:
+
+1. Bấm **⭐ Star** kho lưu trữ này ở góc trên bên phải để tiếp thêm năng lượng cho team phát triển.
+2. Bấm **🔔 Watch -> All Activity** để là người đầu tiên nhận thông báo ngay khi bản vẽ và firmware chính thức được phát hành.
+3. Chia sẻ dự án tới cộng đồng chế tạo Robot sinh học (Biomimetic), RC & Drone Việt Nam!
+
+> *"Công nghệ không chỉ nằm ở vi mạch — mà là khi cơ khí và sinh học hòa làm một trên bầu trời."*
 
 ---
 
