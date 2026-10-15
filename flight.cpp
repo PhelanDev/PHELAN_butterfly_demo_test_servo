@@ -199,7 +199,7 @@ static void handleInitMode(unsigned long dt_us, bool connected,
   }
 }
 
-static void handleModeTransition(int elevator, int throttle) {
+static void handleModeTransition(int elevator, int throttle, bool reqPerch) {
   Flight::state.isFlapping = (throttle >= Config::THROTTLE_IDLE_MAX);
   if (Flight::state.isFlapping && !Flight::state.wasFlapping) {
     Flight::state.phaseNeedsResync = true;
@@ -207,9 +207,11 @@ static void handleModeTransition(int elevator, int throttle) {
   Flight::state.wasFlapping = Flight::state.isFlapping;
 
   if (throttle < Config::THROTTLE_IDLE_MAX) {
-    if (elevator < Config::PERCH_ENTER_ELEV)
+    if (reqPerch) {
       Flight::state.isPerching = true;
-    else if (elevator > Config::PERCH_EXIT_ELEV) {
+    } else if (elevator < Config::PERCH_ENTER_ELEV) {
+      Flight::state.isPerching = true;
+    } else {
       Flight::state.isPerching = false;
       Flight::state.perchAngleLevel = Config::CH_MIN;
     }
@@ -229,10 +231,17 @@ static void handleModeTransition(int elevator, int throttle) {
 }
 
 static void computeServoTargets(unsigned long dt_us, int steering, int elevator,
-                                int throttle) {
-  int steerValue = (abs(steering - Config::CH_CENTER) > Config::STICK_DEADBAND)
-                       ? Config::mapTrim15(steering)
-                       : 0;
+                                int throttle, int yaw) {
+  int steerDelta = 0;
+  if (abs(steering - Config::CH_CENTER) > Config::STICK_DEADBAND) {
+    steerDelta += (steering - Config::CH_CENTER);
+  }
+  if (abs(yaw - Config::CH_CENTER) > Config::STICK_DEADBAND) {
+    steerDelta += (yaw - Config::CH_CENTER);
+  }
+  int combinedSteer =
+      constrain(Config::CH_CENTER + steerDelta, Config::CH_MIN, Config::CH_MAX);
+  int steerValue = Config::mapTrim15(combinedSteer);
   int elevOffset = 0;
 
   if (Flight::state.mode != FlightMode::PERCHING) {
@@ -263,7 +272,8 @@ static void computeServoTargets(unsigned long dt_us, int steering, int elevator,
 
 static void handleConnectedMode(unsigned long dt_us, bool connected,
                                 unsigned long currentMillis, int steering,
-                                int elevator, int throttle) {
+                                int elevator, int throttle, int yaw,
+                                bool reqPerch) {
   if (!connected) {
     Flight::state.mode = FlightMode::FAILSAFE;
     Flight::state.failsafeEnterMs = currentMillis;
@@ -273,12 +283,12 @@ static void handleConnectedMode(unsigned long dt_us, bool connected,
     return;
   }
   Flight::state.failsafeEnterMs = 0;
-  handleModeTransition(elevator, throttle);
-  computeServoTargets(dt_us, steering, elevator, throttle);
+  handleModeTransition(elevator, throttle, reqPerch);
+  computeServoTargets(dt_us, steering, elevator, throttle, yaw);
 }
 
 void processFlightLogic(unsigned long dt_us, int steering, int elevator,
-                        int throttle, int yaw, bool connected) {
+                        int throttle, int yaw, bool connected, bool reqPerch) {
   unsigned long currentMillis = millis();
   switch (Flight::state.mode) {
   case FlightMode::FAILSAFE:
@@ -290,7 +300,7 @@ void processFlightLogic(unsigned long dt_us, int steering, int elevator,
   case FlightMode::PERCHING:
   case FlightMode::CONNECTED:
     handleConnectedMode(dt_us, connected, currentMillis, steering, elevator,
-                        throttle);
+                        throttle, yaw, reqPerch);
     break;
   }
 }
@@ -334,6 +344,7 @@ void flightCoreTask(void *pvParameters) {
     bool snapshotConnected = (cmd.flags & 0x01) != 0;
     bool killActive = (cmd.flags & 0x02) != 0;
     bool reqArm = (cmd.flags & 0x04) != 0;
+    bool reqPerch = (cmd.flags & 0x08) != 0;
 
     static uint8_t killDebounce = 0;
     if (killActive) {
@@ -346,6 +357,7 @@ void flightCoreTask(void *pvParameters) {
     if (killDebounce >= 5) {
       Flight::state.isArmed = false;
       Flight::state.isPerching = false;
+      Flight::state.perchAngleLevel = Config::CH_MIN;
       Flight::state.isFlapping = false;
       Flight::state.wasFlapping = false;
       Flight::state.wasPerching = false;
@@ -371,13 +383,15 @@ void flightCoreTask(void *pvParameters) {
       } else if (!reqArm && Flight::state.isArmed && snapshotConnected) {
         if (throttleIdle) {
           Flight::state.isArmed = false;
+          Flight::state.isPerching = false;
+          Flight::state.perchAngleLevel = Config::CH_MIN;
           ServoSystem::detachAll();
           Flight::state.mode = FlightMode::INIT;
         }
       }
 
       processFlightLogic(dt_us, cmd.ch[0], cmd.ch[1], cmd.ch[2], cmd.ch[3],
-                         snapshotConnected);
+                         snapshotConnected, reqPerch);
     }
   }
 }

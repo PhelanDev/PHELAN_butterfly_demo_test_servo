@@ -33,6 +33,6 @@ void publishControlSnapshot(int16_t roll, int16_t pitch, int16_t throttle,
 ControlSnapshot readControlSnapshot();
 
 void processFlightLogic(unsigned long dt_us, int steering, int elevator,
-                        int throttle, int yaw, bool connected);
+                        int throttle, int yaw, bool connected, bool reqPerch);
 
 void flightCoreTask(void *pvParameters);

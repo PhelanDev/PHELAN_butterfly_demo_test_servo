@@ -15,6 +15,8 @@ void setup() {
 
   ESP32PWM::allocateTimer(0);
   ESP32PWM::allocateTimer(1);
+  ESP32PWM::allocateTimer(2);
+  ESP32PWM::allocateTimer(3);
 
   pinMode(Config::LED_PIN, OUTPUT);
   digitalWrite(Config::LED_PIN, HIGH);
@@ -24,7 +26,6 @@ void setup() {
 
   WebServer::init();
 
-  // Chay flightCoreTask tren Core 1 (App Core) de khong tranh chap CPU voi Wi-Fi Core 0
   xTaskCreatePinnedToCore(flightCoreTask, "flightCore", 4096, NULL, 2, NULL, 1);
 }
 

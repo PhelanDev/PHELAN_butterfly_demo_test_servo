@@ -1,8 +1,11 @@
-# Phelan Butterfly V1 — ESP32 Flapping-Wing Flight Controller
+# Phelan Butterfly V1 — ESP32 Flapping-Wing Flight Controller (Bản Test Code)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Platform: ESP32](https://img.shields.io/badge/Platform-ESP32%20%7C%20ESP32--C3-blue.svg)](#)
-[![Arduino IDE](https://img.shields.io/badge/Arduino%20IDE-2.x-teal.svg)](#)
+[![Status: Test Code](https://img.shields.io/badge/Status-Bản%20Test%20Code-orange.svg)](#)
+
+> [!NOTE]
+> **Lưu ý**: Đây là **bản test code** thử nghiệm cho dự án mô hình bướm vỗ cánh (Phelan Butterfly). Bản chính thức đầy đủ tính năng sẽ sớm ra mắt ở phần bên dưới!
 
 > Hệ thống điều khiển mô hình bướm vỗ cánh (Ornithopter) 2 servo dùng vi điều khiển ESP32 / ESP32-C3, trang bị cặp servo kỹ thuật số kim loại **PTK 7452** và hệ thống nguồn **Pin LiPo 2S (7.4V)** qua mạch hạ áp **BEC 5V**, tích hợp giao diện mặt đất **Tactical Web Deck** qua Wi-Fi thời gian thực.
 
@@ -18,6 +21,7 @@
 - [Hướng Dẫn Sử Dụng](#hướng-dẫn-sử-dụng)
 - [Tùy Chỉnh Thông Số](#tùy-chỉnh-thông-số)
 - [Simulator](#simulator)
+- [Bản Đầy Đủ (Sắp Ra Mắt)](#bản-đầy-đủ-sắp-ra-mắt)
 - [Đóng Góp](#đóng-góp)
 - [Giấy Phép](#giấy-phép)
 
@@ -86,14 +90,17 @@ buomv1/
 > **CẢNH BÁO QUAN TRỌNG VỀ PINOUT (ESP32 WROOM / ESP32 Dev Module):**
 > Tuyệt đối **KHÔNG sử dụng GPIO 6 đến GPIO 11** trên kit ESP32 tiêu chuẩn. Các chân này được nối trực tiếp với chip nhớ SPI Flash nội bộ. Nếu gán GPIO 6 hoặc 8 làm chân servo/LED, ESP32 sẽ bị xung đột bus bộ nhớ Flash và rơi vào vòng lặp Bootloop/Watchdog Reset: `rst:0x8 (TG1WDT_SYS_RESET)`.
 
-### 1. Kit Chuẩn ESP32 Dev Module (ESP-WROOM-32)
+### 1. Kit Chuẩn ESP32 DevKit V1 (DOIT ESP32 DEVKIT V1 / ESP-WROOM-32 — Khuyến Nghị Test)
 
-| Linh Kiện | Chân Tín Hiệu | Chân Nguồn | Chức Năng |
+> Phiên bản code mặc định được tối ưu và kiểm thử trực tiếp trên dòng kit **DOIT ESP32 DEVKIT V1** (30 chân hoặc 36 chân).
+
+| Linh Kiện | Chân Tín Hiệu Trên Kit | Chân Nguồn | Chức Năng |
 | :--- | :---: | :---: | :--- |
-| **Servo PTK 7452 Trái (L)** | `GPIO 21` | BEC 5V / GND | Động lực vỗ cánh + lái vi sai cánh trái (PWM 300Hz) |
-| **Servo PTK 7452 Phải (R)** | `GPIO 22` | BEC 5V / GND | Động lực vỗ cánh + lái vi sai cánh phải (PWM 300Hz) |
-| **LED Trạng Thái** | `GPIO 2` | Onboard / GND | Onboard LED · Chớp chậm: Đang kết nối · Chớp nhanh: DISARMED · Sáng: ARMED |
-| **Nguồn Pin 2S (7.4V)** | — | Vào BEC IN (+/-) | Cung cấp toàn bộ công suất hoạt động cho hệ thống |
+| **Servo PTK 7452 Trái (L)** | `D21` (GPIO 21) | BEC 5V / GND | Động lực vỗ cánh + lái vi sai cánh trái (PWM 300Hz) |
+| **Servo PTK 7452 Phải (R)** | `D22` (GPIO 22) | BEC 5V / GND | Động lực vỗ cánh + lái vi sai cánh phải (PWM 300Hz) |
+| **LED Trạng Thái** | `D2` (GPIO 2) | Onboard / GND | Đèn LED xanh dương tích hợp trên kit DevKit V1 |
+| **Nguồn Cấp Cho Kit** | Chân `VIN` | BEC 5V (+) | Cấp nguồn 5V ổn định từ đầu ra BEC |
+| **Mass Toàn Mạch** | Chân `GND` | Common GND (-) | Nối chung toàn bộ cực âm pin, BEC và servo |
 
 ### 2. Kit Nhỏ Gọn ESP32-C3 Dev Module
 
@@ -119,18 +126,18 @@ Board package yêu cầu: **ESP32 by Espressif** (>= 2.0.0) trong Boards Manager
 
 ## Hướng Dẫn Sử Dụng
 
-### 1. Nạp Firmware
+### 1. Nạp Firmware Cho ESP32 DevKit V1
 
 1. Mở file [buomv1.ino](file:///d:/buomv1/buomv1.ino) bằng Arduino IDE 2.x.
-2. Chọn Board: `ESP32 Dev Module` hoặc `ESP32-C3 Dev Module`.
-3. Cấu hình thông tin Wi-Fi trong namespace `Config`:
-   ```cpp
-   // Điền SSID & mật khẩu nếu muốn bướm kết nối vào mạng Wi-Fi có sẵn:
-   constexpr char WIFI_STA_SSID[] = "YourWiFiSSID";
-   constexpr char WIFI_STA_PASS[] = "YourWiFiPassword";
-   ```
-   *Ghi chú: Để trống `""` sẽ tự động chạy hoàn toàn ở chế độ SoftAP (tự phát mạng riêng).*
-4. Biên dịch và nạp (Compile & Upload).
+2. Cấu hình menu **Tools**:
+   - **Board**: `DOIT ESP32 DEVKIT V1` (hoặc `ESP32 Dev Module`).
+   - **Upload Speed**: `921600` (hoặc `115200` nếu cáp kết nối chập chờn).
+   - **CPU Frequency**: `240MHz (WiFi/BT)` hoặc `160MHz`.
+   - **Flash Frequency**: `80MHz`.
+   - **Partition Scheme**: `Default 4MB with spiffs` hoặc `Huge APP (3MB No OTA)`.
+   - **Port**: Chọn đúng cổng COM của chip nạp (CP2102 / CH340).
+3. Cấu hình thông tin Wi-Fi trong [config.h](file:///d:/buomv1/config.h) (để trống `WIFI_STA_SSID` để luôn chạy mạng SoftAP độc lập `Phelan-Butterfly`).
+4. Bấm **Upload**. *(Nếu Arduino IDE dừng ở thông báo `Connecting........_____`, hãy nhấn giữ nút **BOOT** trên kit DevKit V1 1-2 giây rồi thả ra để vào chế độ nạp flash).*
 
 ### 2. Kết Nối Thiết Bị
 
@@ -177,10 +184,25 @@ Dự án cung cấp file [server.js](file:///d:/buomv1/server.js) để giả l�
 
 ```bash
 node server.js
-# Mở trình duyệt truy cập: http://localhost:8080
 ```
+Truy cập qua trình duyệt tại: `http://localhost:8080`
 
 Yêu cầu môi trường Node.js >= 16. Server mô phỏng đầy đủ giao thức nhị phân WebSocket, truyền nhận telemetry và phản hồi gói tin Heartbeat PING/PONG.
+
+---
+
+## Bản Đầy Đủ (Sắp Ra Mắt)
+
+> [!IMPORTANT]
+> **Phiên bản hoàn chỉnh & đầy đủ tính năng sẽ sớm ra mắt!**
+>
+> Bản hiện tại là **bản test code** phục vụ việc thử nghiệm mô hình cánh vỗ Butterfly, tinh chỉnh hành trình servo và kiểm tra khả năng điều khiển qua giao diện Web Deck. Phiên bản đầy đủ sắp tới sẽ được công bố với các nội dung chi tiết:
+> - Hướng dẫn gia công cơ khí & lắp ráp chi tiết theo bản vẽ khung sải cánh 80cm.
+> - Thuật toán ổn định khí động học và hỗ trợ tự động giữ độ cao/hướng bay.
+> - Hỗ trợ tay cầm điều khiển vật lý (GamePad Bluetooth, tay điều khiển RC chuyên dụng).
+> - Giao diện Web GCS nâng cao tích hợp đồ thị phân tích trạng thái thời gian thực.
+>
+> 🚀 *Theo dõi kho lưu trữ (Star & Watch repo) để nhận thông báo sớm nhất ngay khi bản đầy đủ chính thức được phát hành!*
 
 ---
 

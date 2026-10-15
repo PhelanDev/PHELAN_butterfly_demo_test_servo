@@ -14,6 +14,7 @@ bool webControlEnabled = false;
 volatile unsigned long lastWsPacketTime = 0;
 unsigned long lastTelemSendTime = 0;
 volatile int8_t wsArmRequest = 0;
+volatile int8_t wsPerchRequest = 0;
 constexpr unsigned long TELEM_INTERVAL_MS = 200;
 
 static int16_t webChannels[16] = {1500, 1500, 1000, 1500, 1000, 1500, 1500, 1500,
@@ -45,10 +46,7 @@ static void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
 
       wsArmRequest = (pkt->flags & 0x01) ? 1 : 0;
       webChannels[Config::CH_KILL_SWITCH] = (pkt->flags & 0x02) ? 1900 : 1000;
-
-      if (pkt->flags & 0x04) {
-        webChannels[Config::CH_ELEVATOR] = 1100;
-      }
+      wsPerchRequest = (pkt->flags & 0x04) ? 1 : 0;
 
       webControlEnabled = true;
     } else if (info->opcode == WS_TEXT && len >= 4 &&
@@ -83,12 +81,18 @@ void sendTelemetry() {
   tpkt.offset = (int8_t)constrain((int)Flight::state.currentOffset, -127, 127);
   tpkt.servoL = (uint8_t)constrain(ServoSystem::state.lastPosL, 0, 255);
   tpkt.servoR = (uint8_t)constrain(ServoSystem::state.lastPosR, 0, 255);
+#if defined(CONFIG_IDF_TARGET_ESP32) || defined(ESP32)
+  tpkt.cpuTemp = (uint8_t)constrain((int)temperatureRead(), 0, 120);
+  tpkt.cpuMhz = (uint8_t)getCpuFrequencyMhz();
+#else
   tpkt.cpuTemp = 42;
   tpkt.cpuMhz = 160;
-  tpkt.uptimeSec = (uint16_t)(millis() / 1000);
-  tpkt.timeH = 0;
-  tpkt.timeM = 0;
-  tpkt.timeS = 0;
+#endif
+  uint32_t upSec = millis() / 1000;
+  tpkt.uptimeSec = (uint16_t)upSec;
+  tpkt.timeH = (uint8_t)((upSec / 3600) % 24);
+  tpkt.timeM = (uint8_t)((upSec / 60) % 60);
+  tpkt.timeS = (uint8_t)(upSec % 60);
 
   ws.binaryAll((uint8_t *)&tpkt, sizeof(tpkt));
 }
@@ -104,7 +108,6 @@ void init() {
   Serial.println();
   Serial.println("[BOOT] Khoi dong he thong mang Wi-Fi...");
 
-  // Cau hinh dia chi IP co dinh cho SoftAP (Phao cuu sinh luon hoat dong)
   IPAddress apIP(192, 168, 4, 1);
   IPAddress netMsk(255, 255, 255, 0);
 
@@ -112,13 +115,11 @@ void init() {
                        strcmp(Config::WIFI_STA_SSID, "YourWiFiSSID") != 0);
 
   if (hasStaConfig) {
-    // Che do ket hop AP + STA: Vua ket noi Router nha, vua phat SoftAP du phong
     WiFi.mode(WIFI_AP_STA);
   } else {
     WiFi.mode(WIFI_AP);
   }
 
-  // Khoi dong SoftAP voi dai IP 192.168.4.1
   WiFi.softAPConfig(apIP, apIP, netMsk);
   const char *apSsid = (strlen(Config::WIFI_AP_SSID) > 0)
                            ? Config::WIFI_AP_SSID
@@ -152,7 +153,6 @@ void init() {
     }
   }
 
-  // Khoi dong mDNS
   if (MDNS.begin(Config::MDNS_HOST)) {
     MDNS.addService("http", "tcp", 80);
     Serial.printf("[mDNS] http://%s.local\n", Config::MDNS_HOST);
@@ -161,7 +161,6 @@ void init() {
   ws.onEvent(onWsEvent);
   server.addHandler(&ws);
 
-  // Phuc vu giao dien web cho ca / va /index.html
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
     request->send_P(200, "text/html; charset=utf-8", (const uint8_t *)PAGE_HTML,
                     sizeof(PAGE_HTML) - 1);
@@ -171,7 +170,6 @@ void init() {
                     sizeof(PAGE_HTML) - 1);
   });
 
-  // Chuyen huong Captive Portal cua dien thoai ve trang chu
   server.on("/generate_204", HTTP_GET, [](AsyncWebServerRequest *request) {
     request->redirect("/");
   });
@@ -179,6 +177,7 @@ void init() {
     request->redirect("/");
   });
 
+  WiFi.setSleep(false);
   server.begin();
   wifiActive = true;
   digitalWrite(Config::LED_PIN, LOW);
@@ -206,6 +205,8 @@ void handleLoop() {
     flags |= 0x02;
   if (armRequested)
     flags |= 0x04;
+  if (wsPerchRequest == 1)
+    flags |= 0x08;
 
   publishControlSnapshot(
       webChannels[Config::CH_STEERING], webChannels[Config::CH_ELEVATOR],

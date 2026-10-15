@@ -15,22 +15,19 @@ inline void disableBrownout() {
 
 namespace Config {
 #if defined(CONFIG_IDF_TARGET_ESP32C3)
-constexpr uint8_t SERVO_L_PIN = 21;
-constexpr uint8_t SERVO_R_PIN = 22;
+constexpr uint8_t SERVO_L_PIN = 4;
+constexpr uint8_t SERVO_R_PIN = 5;
 constexpr uint8_t LED_PIN = 8;
 #else
-// Standard ESP32 (ESP-WROOM-32 / ESP32 Dev Module)
-constexpr uint8_t SERVO_L_PIN = 21; // GPIO 21 (Servo Trái)
-constexpr uint8_t SERVO_R_PIN = 22; // GPIO 22 (Servo Phải)
-constexpr uint8_t LED_PIN = 2;      // Onboard LED của ESP32 Dev Module (GPIO 2)
+constexpr uint8_t SERVO_L_PIN = 21;
+constexpr uint8_t SERVO_R_PIN = 22;
+constexpr uint8_t LED_PIN = 2;
 #endif
 
-// Wi-Fi credentials — change these to match your network.
-// Leave SSID empty ("") to always run in SoftAP mode.
 constexpr char WIFI_STA_SSID[] = "Phong12";
 constexpr char WIFI_STA_PASS[] = "abcd1234";
 constexpr char WIFI_AP_SSID[] = "Phelan-Butterfly";
-constexpr char WIFI_AP_PASS[] = ""; // Mật khẩu SoftAP (để trống "" để mở tự do không cần mật khẩu, hoặc điền tối thiểu 8 ký tự)
+constexpr char WIFI_AP_PASS[] = "";
 constexpr char MDNS_HOST[] = "phelan";
 
 constexpr int SERVO_HZ = 300;
@@ -76,7 +73,7 @@ inline int mapTrim15(int x) {
   int s = (d > 0) ? (d - STICK_DEADBAND) : (d + STICK_DEADBAND);
   return constrain(s / 30, -15, 15);
 }
-} // namespace Config
+}
 
 #pragma pack(push, 1)
 struct FlightPacket {

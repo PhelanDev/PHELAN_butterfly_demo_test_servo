@@ -173,6 +173,7 @@ html, body {
 }
 .badge-linked { color: var(--accent-green); background: rgba(16, 185, 129, 0.15); }
 .badge-armed { color: #fff; background: rgba(37, 99, 235, 0.85); box-shadow: 0 0 8px rgba(37, 99, 235, 0.4); }
+.badge-perch { color: #fff; background: rgba(245, 158, 11, 0.85); box-shadow: 0 0 8px rgba(245, 158, 11, 0.4); }
 .badge-disc { color: var(--accent-red); background: rgba(239, 68, 68, 0.15); }
 .badge-failsafe {
   color: #fff;
@@ -855,6 +856,10 @@ function handleStopClick() {
 }
 
 function togglePerchClick() {
+  if (!App.isArmed) {
+    showInterlockToast("HÃY ARM TRƯỚC KHI KÍCH HOẠT CHẾ ĐỘ ĐẬU!");
+    return;
+  }
   App.isPerching = !App.isPerching;
   updatePerchButtonUI(App.isPerching);
   if (navigator.vibrate) navigator.vibrate(50);
@@ -980,7 +985,7 @@ function initWebSocket() {
       if (view.getUint8(0) === 0xBB) {
         const flags = view.getUint8(1);
         const armedFromHw = (flags & 0x01) !== 0;
-        const modeId = (flags >> 1); // 0: INIT, 1: CONNECTED, 2: PERCHING, 3: FAILSAFE
+        const modeId = (flags >> 1);
 
         if (armedFromHw !== App.isArmed) {
           App.isArmed = armedFromHw;
@@ -988,6 +993,12 @@ function initWebSocket() {
           if (!App.isArmed) {
             showInterlockToast("ĐÃ DISARM — HẠ CẦN GA VỀ 0% ĐỂ ARM LẠI!");
           }
+        }
+
+        const isHwPerching = (modeId === 2);
+        if (App.isPerching !== isHwPerching) {
+          App.isPerching = isHwPerching;
+          updatePerchButtonUI(App.isPerching);
         }
 
         const fsBanner = document.getElementById('failsafe-banner');
@@ -1008,7 +1019,10 @@ function initWebSocket() {
             fsBanner.style.display = 'none';
           }
           if (badge && App.wsConnected) {
-            if (App.isArmed) {
+            if (modeId === 2) {
+              badge.textContent = "PERCHING";
+              badge.className = "badge-state badge-perch";
+            } else if (App.isArmed) {
               badge.textContent = "ARMED";
               badge.className = "badge-state badge-armed";
             } else {

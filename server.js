@@ -84,25 +84,28 @@ server.on('upgrade', (req, socket, head) => {
     const linkLost = isArmed && (now - lastPacketTime > 600);
     let modeId = 0;
     if (linkLost) {
-      modeId = 3; // FAILSAFE
+      modeId = 3;
     } else if (isPerching) {
-      modeId = 2; // PERCHING
+      modeId = 2;
     } else if (isArmed) {
-      modeId = 1; // CONNECTED
+      modeId = 1;
     } else {
-      modeId = 0; // INIT
+      modeId = 0;
     }
 
     const tpkt = Buffer.alloc(12);
     tpkt[0] = 0xBB;
     tpkt[1] = (isArmed && !linkLost ? 1 : 0) | (modeId << 1);
-    tpkt[2] = linkLost ? 15 : 0; // offset (15 deg glide in failsafe)
-    tpkt[3] = 90; // servoL
-    tpkt[4] = 90; // servoR
-    tpkt[5] = 42; // temp
-    tpkt[6] = 160; // mhz
+    tpkt[2] = linkLost ? 15 : (isPerching ? 35 : 0);
+    tpkt[3] = 90;
+    tpkt[4] = 90;
+    tpkt[5] = 42;
+    tpkt[6] = 160;
     const upSec = Math.floor((Date.now() - startTime) / 1000);
     tpkt.writeUInt16LE(upSec, 7);
+    tpkt[9] = Math.floor(upSec / 3600) % 24;
+    tpkt[10] = Math.floor(upSec / 60) % 60;
+    tpkt[11] = upSec % 60;
 
     socket.write(createWebSocketFrame(tpkt, true));
   }, 200);
@@ -145,17 +148,14 @@ server.on('upgrade', (req, socket, head) => {
       buffer = buffer.slice(totalLength);
 
       if (opcode === 0x08) {
-        // Close frame
         socket.end();
         break;
       } else if (opcode === 0x01) {
-        // Text frame
         const text = payload.toString('utf8');
         if (text === 'PING') {
           socket.write(createWebSocketFrame('PONG', false));
         }
       } else if (opcode === 0x02) {
-        // Binary frame
         if (payload.length >= 6 && payload[0] === 0xAA) {
           lastPacketTime = Date.now();
           const flags = payload[1];
@@ -163,15 +163,14 @@ server.on('upgrade', (req, socket, head) => {
           const isStop = (flags & 0x02) !== 0;
           isPerching = (flags & 0x04) !== 0;
 
-          if (isStop) {
-            isArmed = false;
-            isPerching = false;
-          }
-
           currentThr = payload.readInt8(2);
           currentYaw = payload.readInt8(3);
           currentPit = payload.readInt8(4);
           currentRol = payload.readInt8(5);
+
+          if (isStop || !isArmed || currentThr > 0) {
+            isPerching = false;
+          }
         }
       }
     }

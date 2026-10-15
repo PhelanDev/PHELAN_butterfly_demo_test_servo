@@ -1,4 +1,3 @@
-# Arduino / PlatformIO Build
 *.bin
 *.elf
 *.hex
@@ -9,28 +8,21 @@
 build/
 output/
 
-# IDE
 .vscode/
 .idea/
 *.code-workspace
 
-# OS
 .DS_Store
 Thumbs.db
 Desktop.ini
 
-# Node.js (simulator)
 node_modules/
 package-lock.json
 
-# Runtime
 __pycache__/
 *.tmp
 *.log
 
-# Planning & AI artifacts
 plans/
 
-# Sensitive
 *.env
-
